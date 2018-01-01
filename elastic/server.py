@@ -1,7 +1,7 @@
 import socket
 import select
 
-import settings
+from elastic import settings
 
 class Server:
 

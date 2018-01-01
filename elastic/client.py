@@ -2,7 +2,7 @@ import socket
 import select
 import sys
 
-import settings
+from elastic import settings
 
 class Client:
 
