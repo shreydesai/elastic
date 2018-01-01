@@ -53,6 +53,9 @@ class Server:
         print('Client {}:{} connected'.format(
             *client_sock.getsockname()
         ))
+        msg = settings.ACK
+        encoded_msg = msg.encode(settings.ENCODING)
+        client_sock.send(encoded_msg)
 
     def _disconnect_client(self, client_sock):
         print('Client {}:{} has disconnected'.format(
@@ -83,4 +86,3 @@ class Server:
 if __name__ == '__main__':
     server = Server()
     server.start()
-

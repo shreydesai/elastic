@@ -31,6 +31,7 @@ class Client:
                 sys.exit(1)
             if msg != settings.ACK:
                 print(msg)
+            print('>', end=' ', flush=True)
         else:
             print('Server disconnected')
             sys.exit(1)
@@ -49,7 +50,6 @@ class Client:
                     self._handle_response(input_sock, data)
                 else:
                     self._send_request(self.server_sock)
-
 
 if __name__ == '__main__':
     client = Client()
