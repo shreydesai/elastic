@@ -5,6 +5,7 @@ class Room:
     def __init__(self, name, admin):
         self.name = name
         self.admin = None
+        self.key = None
         self.clients = []
 
     def __eq__(self, obj):
@@ -15,6 +16,15 @@ class Room:
     def __repr__(self):
         return 'Room<{}>'.format(self.name)
 
+    def is_protected(self):
+        return self.key is not None
+
+    def set_key(self, key):
+        self.key = hash(key)
+
+    def correct_key(self, key):
+        return self.key == hash(key) 
+
     def add_client(self, person):
         self.clients.append(person)
         msg = '[{}:{}] has joined room \'{}\''.format(
@@ -22,8 +32,9 @@ class Room:
         )
         for client in self.clients:
             if client is person:
-                msg = 'Joined room \'{}\' ({} client(s) present)\n'
-                msg = msg.format(self.name, len(self.clients) - 1)
+                msg = 'Joined{}room \'{}\' ({} client(s) present)\n'
+                msg = msg.format(' protected ' if self.is_protected() else ' ',
+                                 self.name, len(self.clients) - 1)
             client.send_msg(msg)
 
     def remove_client(self, person):

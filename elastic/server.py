@@ -66,46 +66,65 @@ class Server:
     def _help(self, person):
         msg = '\nElastic Chat Server\n' + \
               '/help - Lists instructions.\n' + \
-              '/join <name> - Joins a room named <name>. If <name> does ' + \
-              'not exist, then it will be created.\n' + \
+              '/join <name> <key> - Joins a room named <name>. If ' + \
+              '<name> does not exist, then it will be created. <key> is ' + \
+              'optional, but if specified, the room will be protected.\n' + \
               '/list - Lists all rooms.\n'
         person.send_msg(msg)
 
     def _join(self, person, msg):
         parts = msg.split(' ')
+        _, name, key = (None,) * 3
 
         if len(parts) < 2:
             return False
-
-        _, name = parts
-        name = name.strip()
+        if len(parts) == 2:
+            _, name = parts
+        if len(parts) == 3:
+            _, name, key = parts
 
         room = None
         curr_room = self._find_curr_room(person)
+        name = name.strip()
 
         if name in self.rooms:
             room = self.rooms[name]
-
             if room.search_client(person):
-                msg = 'You are already in room \'{}\''.format(name)
+                msg = 'You are already in room \'{}\'\n'.format(name)
                 person.send_msg(msg)
                 return True
         else:
             room = Room(name, person)
+            if key:
+                room.set_key(key)
             self.rooms[name] = room
+
+        if room.is_protected():
+            if key:
+                if not room.correct_key(key):
+                    msg = 'The key supplied was incorrect\n'
+                    person.send_msg(msg)
+                    return True
+            else:
+                msg = 'This room requires a key to enter\n'
+                person.send_msg(msg)
+                return True
 
         if curr_room:
             curr_room.remove_client(person)
-
         room.add_client(person)
 
         return True
 
     def _list(self, person):
-        string = ['Room\tClients']
+        string = ['Room\t\tClients']
         for name in sorted(self.rooms):
             room = self.rooms[name]
-            string.append('{}\t{}'.format(room.name, len(room.clients)))
+            string.append('{}{}\t\t{}'.format(
+                '*' if room.is_protected() else '',
+                room.name,
+                len(room.clients)
+            ))
         msg = '\n'.join(string) + '\n'
         person.send_msg(msg)
 
