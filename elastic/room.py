@@ -1,4 +1,10 @@
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.backends import default_backend
+
 from elastic import settings
+from elastic.utils import encrypt_msg
 
 class Room:
 
@@ -35,25 +41,36 @@ class Room:
                 msg = 'Joined{}room \'{}\' ({} client(s) present)\n'
                 msg = msg.format(' protected ' if self.is_protected() else ' ',
                                  self.name, len(self.clients) - 1)
-            client.send_msg(msg)
+            encoded_msg = encrypt_msg(client, msg)
+            client.send_msg(encoded_msg, encoded=True)
 
     def remove_client(self, person):
-        self.clients.remove(person)
-        person.send_msg('Left room \'{}\'\n'.format(self.name))
+        self.purge_client(person)
+
+        msg = 'Left room \'{}\'\n'.format(self.name)
+        encoded_msg = encrypt_msg(person, msg)
+        person.send_msg(encoded_msg, encoded=True)
+
         msg = '[{}:{}] has left room \'{}\''.format(
             *person.peer_addr(), self.name
         )
+
         for client in self.clients:
-            client.send_msg(msg)
+            encoded_msg = encrypt_msg(client, msg)
+            client.send_msg(encoded_msg, encoded=True)
+
+    def purge_client(self, person):
+        self.clients.remove(person)
 
     def search_client(self, client):
         return client in self.clients
 
     def broadcast(self, sender, msg):
-        broadcast_msg = None
         for client in self.clients:
             if client is sender:
                 broadcast_msg = settings.ACK
             else:
                 broadcast_msg = '[{}:{}] {}'.format(*client.peer_addr(), msg)
-            client.send_msg(broadcast_msg)
+
+            encoded_msg = encrypt_msg(client, broadcast_msg)
+            client.send_msg(encoded_msg, encoded=True)

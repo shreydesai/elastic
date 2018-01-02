@@ -4,8 +4,10 @@ class Person:
 
     def __init__(self, sock, name=None):
         self.sock = sock
-        self.sock.setblocking(0)
         self.name = name
+        self.public_key = None
+
+        self.sock.setblocking(0)
 
     def __eq__(self, obj):
         if isinstance(obj, Person):
@@ -24,6 +26,9 @@ class Person:
     def close_sock(self):
         self.sock.close()
 
-    def send_msg(self, msg):
-        encoded_msg = msg.encode(settings.ENCODING)
-        self.sock.send(encoded_msg)
+    def send_msg(self, msg, encoded=False):
+        if encoded:
+            self.sock.send(msg)
+        else:
+            encoded_msg = msg.encode(settings.ENCODING)
+            self.sock.send(encoded_msg)
