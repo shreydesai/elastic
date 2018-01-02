@@ -181,7 +181,8 @@ class Server:
         self.clients.pop(person.peer_addr())
         
         curr_room = self._find_curr_room(person)
-        curr_room.purge_client(person)
+        if curr_room:
+            curr_room.purge_client(person)
 
         person.close_sock()
 
