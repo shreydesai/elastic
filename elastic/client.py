@@ -17,11 +17,9 @@ class Client:
     def __init__(self):
         self.input_sockets = []
         self.server_sock = self._connect()
-
         self.private_key = generate_private_key()
         self.public_key = self.private_key.public_key()
         self.server_public_key = None
-
         self.input_sockets.append(sys.stdin)
         self.input_sockets.append(self.server_sock)
 

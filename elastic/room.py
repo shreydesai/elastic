@@ -1,3 +1,5 @@
+import threading
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -13,6 +15,7 @@ class Room:
         self.admin = None
         self.key = None
         self.clients = []
+        self.lock = threading.Lock()
 
     def __eq__(self, obj):
         if isinstance(obj, Room):
@@ -32,10 +35,13 @@ class Room:
         return self.key == hash(key) 
 
     def add_client(self, person):
+        self.lock.acquire()
+
         self.clients.append(person)
         msg = '[{}:{}] has joined room \'{}\''.format(
             *person.peer_addr(), self.name
         )
+
         for client in self.clients:
             if client is person:
                 msg = 'Joined{}room \'{}\' ({} client(s) present)\n'
@@ -44,7 +50,10 @@ class Room:
             encoded_msg = encrypt_msg(client, msg)
             client.send_msg(encoded_msg, encoded=True)
 
+        self.lock.release()
+
     def remove_client(self, person):
+        self.lock.acquire()
         self.purge_client(person)
 
         msg = 'Left room \'{}\'\n'.format(self.name)
@@ -59,13 +68,20 @@ class Room:
             encoded_msg = encrypt_msg(client, msg)
             client.send_msg(encoded_msg, encoded=True)
 
+        self.lock.release()
+
     def purge_client(self, person):
         self.clients.remove(person)
 
     def search_client(self, client):
-        return client in self.clients
+        self.lock.acquire()
+        result = client in self.clients
+        self.lock.release()
+        return result 
 
     def broadcast(self, sender, msg):
+        self.lock.acquire()
+
         for client in self.clients:
             if client is sender:
                 broadcast_msg = settings.ACK
@@ -74,3 +90,5 @@ class Room:
 
             encoded_msg = encrypt_msg(client, broadcast_msg)
             client.send_msg(encoded_msg, encoded=True)
+
+        self.lock.release()

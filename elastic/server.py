@@ -15,21 +15,20 @@ from elastic.utils import generate_private_key, serialize_public_key, \
 
 class Server:
 
-    def __init__(self):
+    def __init__(self, ip_address, port):
+        self.ip_address = ip_address
+        self.port = port
         self.input_sockets = []
         self.exceptional_sockets = []
         self.server_sock = self._connect()
-
         self.clients = {}
         self.rooms = {}
-
         self.private_key = generate_private_key()
         self.public_key = self.private_key.public_key()
-
         self.input_sockets.append(self.server_sock)
 
     def _connect(self):
-        server_address = (settings.SERVER_IP_ADDRESS, settings.SERVER_PORT)
+        server_address = (self.ip_address, self.port)
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.setblocking(0)
@@ -209,5 +208,8 @@ class Server:
                 self.input_socks.remove(exceptional_sock)
 
 if __name__ == '__main__':
-    server = Server()
+    server = Server(
+        settings.SERVER_IP_ADDRESS,
+        settings.SERVER_PORT
+    )
     server.start()
